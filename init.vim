@@ -166,7 +166,6 @@ Plug 'rodjek/vim-puppet'
 Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 call plug#end()
 
-colo catppuccin
 highlight link ScrollView PmenuSbar
 hi StatusLine guibg=#343952 guifg=#e8ebfc
 hi StatusLineNC guibg=#343952 guifg=#929be5
@@ -184,6 +183,18 @@ function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
   opts.border = opts.border or "rounded"
   return orig_util_open_floating_preview(contents, syntax, opts, ...)
 end
+
+local v_minor = vim.version().minor
+local v_major = vim.version().major
+local use_ts_integrations = v_major >= 1 or v_minor >= 8
+
+require('catppuccin').setup({
+    term_colors = false,
+    integrations = {
+        telescope = true,
+        treesitter = use_ts_integrations,
+    },
+})
 
 local telescope = require('telescope')
 local tsc_builtin = require('telescope.builtin')
@@ -290,3 +301,6 @@ remap('i', '<tab>', [[pumvisible() ? "<c-n>" : "<tab>"]], { expr = true, noremap
 remap('i', '<s-tab>', [[pumvisible() ? "<c-p>" : "<bs>"]], { expr = true, noremap = true })
 
 EOL
+
+colo catppuccin
+Catppuccin macchiato
