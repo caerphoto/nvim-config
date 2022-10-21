@@ -162,7 +162,7 @@ Plug 'nvim-tree/nvim-web-devicons'
 Plug 'https://git.sr.ht/~whynothugo/lsp_lines.nvim'
 Plug 'dstein64/nvim-scrollview', { 'branch': 'main' }
 Plug 'lukas-reineke/indent-blankline.nvim'
-Plug 'rodjek/vim-puppet'
+"Plug 'rodjek/vim-puppet'
 Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 call plug#end()
 
@@ -259,7 +259,7 @@ require'nvim-treesitter.configs'.setup {
     -- ensure_installed = { "javascript", "rust", "ruby", "go", "markdown", "html" },
     highlight = {
         enable = true,
-        additional_vim_regex_highlighting = {"apache"},
+        additional_vim_regex_highlighting = {"apache", "puppet"},
     },
 }
 
