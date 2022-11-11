@@ -1,4 +1,5 @@
 syntax on
+syntax enable
 syntax sync minlines=50
 syntax sync maxlines=100
 scriptencoding utf-8
@@ -9,14 +10,14 @@ filetype plugin on
 " Remove existing autocommands, in case this file is sourced more than once.
 :autocmd!
 
-autocmd FileType php setlocal smartindent
-autocmd BufRead,BufNewFile *.mako setlocal syntax=mako
-autocmd BufRead,BufNewFile *.md setlocal filetype=markdown linebreak textwidth=100 colorcolumn=0 foldcolumn=4 numberwidth=5
+autocmd BufNewFile,BufRead *.mako setlocal syntax=mako
+autocmd BufNewFile,BufRead *.md setlocal filetype=markdown linebreak textwidth=80 colorcolumn=80 foldcolumn=4 numberwidth=5
 autocmd BufNewFile,BufRead *.ejs set filetype=html
 autocmd BufNewFile,BufRead *.html.erb set filetype=html
 autocmd BufNewFile,BufRead *.html.hbs set filetype=html
 autocmd BufNewFile,BufRead *.hbs.html set filetype=html
 autocmd BufNewFile,BufRead *.pug set filetype=jade
+autocmd BufNewFile,BufRead *.pp syntax enable setlocal synmaxcol=500
 autocmd BufNewFile,BufRead .PHSEARCH_SETTINGS set filetype=yaml
 autocmd BufNewFile,BufRead *phgroup.com*.conf,generic.conf,httpd.conf,server.conf set filetype=apache
 autocmd FileType gitcommit setlocal colorcolumn=51
@@ -35,6 +36,11 @@ augroup END " }
 
 set nocompatible
 set backup
+if has('win32') || has('win16')
+    set backupdir=stdpath('config')."\backup"
+else
+    set backupdir=stdpath('config')."/backup"
+endif
 set updatetime=2000 " milliseconds to wait before writing backup file
 set hidden " Allow editing of different files without saving current buffer first.
 " set runtimepath^=~/.vim,~/.vim/after
@@ -91,7 +97,7 @@ set smartcase
 set hlsearch
 set incsearch
 
-set guifont=JetBrainsMono_Nerd_Font_Mono:h12
+set guifont=JetBrains_Mono_Light:h12
 set background=dark
 
 " \ is a bit awkward to reach
@@ -109,6 +115,7 @@ nmap <D-[> :bp<CR>
 nmap <D-]> :bn<CR>
 noremap <tab> %
 nnoremap <leader>l gqq
+nnoremap <leader>p gqap
 nnoremap <silent> <leader>h :nohl<cr>
 nnoremap <C-h> <C-w>h
 nnoremap <C-j> <C-w>j
@@ -133,6 +140,7 @@ if exists("g:neovide")
 
     let g:neovide_cursor_vfx_mode = ""
     let g:neovide_cursor_animation_length = 0
+    let g:neovide_refresh_rate_idle = 5
     cd ~
 endif
 
@@ -142,35 +150,32 @@ let g:go_bin_path = '~/Applications/homebrew/opt/go/bin'
 let g:matchparen_insert_timeout=5
 let g:clang_library_path="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/"
 let g:indent_blankline_use_treesitter = v:true
+let g:indent_blankline_char = "▏"
 " I use C-hjkl for window navigation, so need to prevent COQ from overriding those
 let g:coq_settings = { "auto_start": "shut-up", "keymap.recommended": v:false, "keymap.bigger_preview": v:null, "keymap.jump_to_mark": v:null }
 
 call plug#begin()
+" Essential things
 Plug 'williamboman/mason.nvim' " for easy treesitter language installs
 Plug 'nvim-lua/plenary.nvim' " misc handy Lua functions
 Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
 Plug 'neovim/nvim-lspconfig'
-Plug 'ms-jpq/coq_nvim', { 'branch': 'coq' }
-Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.0' }
+Plug 'ms-jpq/coq_nvim', { 'branch': 'coq' } " autocompletion
+Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.0' } " file/buffer picker
 
+" Useful features
 Plug 'tpope/vim-commentary', { 'branch': 'master' }
 Plug 'tpope/vim-sleuth', { 'branch': 'master' }
 Plug 'windwp/nvim-autopairs'
+Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
 
-Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && cmake --install build --prefix build' }
+" Visual things
 Plug 'nvim-tree/nvim-web-devicons'
 Plug 'https://git.sr.ht/~whynothugo/lsp_lines.nvim'
 Plug 'dstein64/nvim-scrollview', { 'branch': 'main' }
 Plug 'lukas-reineke/indent-blankline.nvim'
-"Plug 'rodjek/vim-puppet'
 Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 call plug#end()
-
-highlight link ScrollView PmenuSbar
-hi StatusLine guibg=#343952 guifg=#e8ebfc
-hi StatusLineNC guibg=#343952 guifg=#929be5
-hi VertSplit guifg=#464f7f
-hi TabLine guibg=#1e2030 guifg=#929be5
 
 lua << EOL
 
@@ -186,7 +191,14 @@ end
 
 local v_minor = vim.version().minor
 local v_major = vim.version().major
-local use_ts_integrations = v_major >= 1 or v_minor >= 8
+local use_ts_integrations =  false --v_major >= 1 or v_minor >= 8
+
+local telescope = require('telescope')
+local tsc_builtin = require('telescope.builtin')
+telescope.setup()
+vim.keymap.set('n', '<space>f', tsc_builtin.find_files, {})
+vim.keymap.set('n', '<space>b', tsc_builtin.buffers, {})
+vim.keymap.set('n', '<space>g', tsc_builtin.live_grep, {})
 
 require('catppuccin').setup({
     term_colors = false,
@@ -196,47 +208,37 @@ require('catppuccin').setup({
     },
 })
 
-local telescope = require('telescope')
-local tsc_builtin = require('telescope.builtin')
-local lsp = require "lspconfig"
-local coq = require "coq"
-
-telescope.setup()
-telescope.load_extension('fzf')
-
-vim.keymap.set('n', '<leader>f', tsc_builtin.find_files, {})
-vim.keymap.set('n', '<leader>g', tsc_builtin.live_grep, {})
-vim.keymap.set('n', '<leader>b', tsc_builtin.buffers, {})
-vim.keymap.set('n', '<D-i>', vim.diagnostic.open_float, { noremap=true, silent=true })
-
 local on_attach = function(client, bufnr)
-  -- Mappings.
+  -- LSP-specific mappings. They're in this function so they only apply for LSP-enabled buffers
   -- See `:help vim.lsp.*` for documentation on any of the below functions
   local bufopts = { noremap=true, silent=true, buffer=bufnr }
-  vim.keymap.set('n', 'gD', vim.lsp.buf.declaration, bufopts)
-  vim.keymap.set('n', 'gd', vim.lsp.buf.definition, bufopts)
-  vim.keymap.set('n', 'K', vim.lsp.buf.hover, bufopts)
-  vim.keymap.set('n', 'gi', vim.lsp.buf.implementation, bufopts)
-  vim.keymap.set('n', '<space>D', vim.lsp.buf.type_definition, bufopts)
+  vim.keymap.set('n', '<space>r',  vim.lsp.buf.references, bufopts)
+  vim.keymap.set('n', 'K',         vim.lsp.buf.hover, bufopts)
   vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, bufopts)
-  vim.keymap.set('n', 'gr', vim.lsp.buf.references, bufopts)
-  vim.keymap.set('n', 'g[', vim.diagnostic.goto_prev, bufopts)
-  vim.keymap.set('n', 'g]', vim.diagnostic.goto_next, bufopts)
+  vim.keymap.set('n', 'gd',        vim.lsp.buf.definition, bufopts)
+  vim.keymap.set('n', 'gi',        vim.diagnostic.open_float, bufopts)
+  vim.keymap.set('n', 'g[',        vim.diagnostic.goto_prev, bufopts)
+  vim.keymap.set('n', 'g]',        vim.diagnostic.goto_next, bufopts)
 end
 
-lsp.rust_analyzer.setup(
-    coq.lsp_ensure_capabilities({
-        on_attach = on_attach,
-        settings = {
-            ["rust_analyzer"] = {
-                checkOnSave = { command = "cargo clippy" }
+local coq = require "coq"
+local lspconfig = require "lspconfig"
+local servers = { 'rust_analyzer', 'gopls', 'denols', 'solargraph' }
+lspconfig.gopls.setup(coq.lsp_ensure_capabilities({ on_attach = on_attach, }))
+lspconfig.denols.setup(coq.lsp_ensure_capabilities({ on_attach = on_attach, }))
+lspconfig.solargraph.setup(coq.lsp_ensure_capabilities({ on_attach = on_attach, }))
+lspconfig.rust_analyzer.setup(coq.lsp_ensure_capabilities({
+    on_attach = on_attach,
+    settings = {
+        ["rust-analyzer"] = {
+            completion = {
+                callable = {
+                    snippets = "add_parentheses",
+                },
             },
         },
-    })
-)
-lsp.gopls.setup( coq.lsp_ensure_capabilities({ on_attach = on_attach, }))
-lsp.denols.setup( coq.lsp_ensure_capabilities({ on_attach = on_attach, }))
-lsp.solargraph.setup( coq.lsp_ensure_capabilities({ on_attach = on_attach, }))
+    },
+}))
 
 
 require("indent_blankline").setup {
@@ -259,7 +261,7 @@ require'nvim-treesitter.configs'.setup {
     -- ensure_installed = { "javascript", "rust", "ruby", "go", "markdown", "html" },
     highlight = {
         enable = true,
-        additional_vim_regex_highlighting = {"apache", "puppet"},
+        additional_vim_regex_highlighting = {"apache", "puppet", "xml"},
     },
 }
 
@@ -304,3 +306,9 @@ EOL
 
 colo catppuccin
 Catppuccin macchiato
+highlight link ScrollView PmenuSbar
+hi StatusLine guibg=#343952 guifg=#e8ebfc
+hi StatusLineNC guibg=#343952 guifg=#929be5
+hi VertSplit guifg=#464f7f
+hi TabLine guibg=#1e2030 guifg=#929be5
+
