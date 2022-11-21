@@ -166,6 +166,8 @@ Plug 'hrsh7th/nvim-cmp'       " Autocompletion plugin
 Plug 'hrsh7th/cmp-nvim-lsp'   " LSP source for nvim-cmp
 Plug 'saadparwaiz1/cmp_luasnip'
 Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.0' } " file/buffer picker
+"Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
+Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && cmake --install build --prefix build' }
 
 " Useful features
 Plug 'tpope/vim-commentary', { 'branch': 'master' }
@@ -254,6 +256,10 @@ cmp.setup {
             luasnip.lsp_expand(args.body)
         end,
     },
+    window = {
+        completion = cmp.config.window.bordered(),
+        documentation = cmp.config.window.bordered(),
+    },
     mapping = cmp.mapping.preset.insert({
         ['<C-d>'] = cmp.mapping.scroll_docs(-4),
         ['<C-f>'] = cmp.mapping.scroll_docs(4),
@@ -281,15 +287,18 @@ cmp.setup {
             end
         end, { 'i', 's' }),
     }),
-    sources = {
+    sources = cmp.config.sources({
         { name = 'nvim_lsp' },
         { name = 'luasnip' },
-    },
+    }, {
+        { name = 'buffer' },
+    })
 }
 
 local telescope = require('telescope')
 local tsc_builtin = require('telescope.builtin')
-telescope.setup()
+telescope.load_extension("fzf")
+
 vim.keymap.set('n', '<space>f', tsc_builtin.find_files, {})
 vim.keymap.set('n', '<space>b', tsc_builtin.buffers, {})
 vim.keymap.set('n', '<space>g', tsc_builtin.live_grep, {})
