@@ -174,7 +174,9 @@ Plug 'nvim-tree/nvim-web-devicons'
 Plug 'https://git.sr.ht/~whynothugo/lsp_lines.nvim'
 Plug 'dstein64/nvim-scrollview', { 'branch': 'main' }
 Plug 'lukas-reineke/indent-blankline.nvim'
+
 Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
+Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
 call plug#end()
 
 lua << EOL
@@ -199,6 +201,7 @@ telescope.setup()
 vim.keymap.set('n', '<space>f', tsc_builtin.find_files, {})
 vim.keymap.set('n', '<space>b', tsc_builtin.buffers, {})
 vim.keymap.set('n', '<space>g', tsc_builtin.live_grep, {})
+vim.keymap.set('n', '<space>d', tsc_builtin.diagnostics, {})
 
 require('catppuccin').setup({
     term_colors = false,
@@ -209,24 +212,26 @@ require('catppuccin').setup({
 })
 
 local on_attach = function(client, bufnr)
-  -- LSP-specific mappings. They're in this function so they only apply for LSP-enabled buffers
-  -- See `:help vim.lsp.*` for documentation on any of the below functions
-  local bufopts = { noremap=true, silent=true, buffer=bufnr }
-  vim.keymap.set('n', '<space>r',  vim.lsp.buf.references, bufopts)
-  vim.keymap.set('n', 'K',         vim.lsp.buf.hover, bufopts)
-  vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, bufopts)
-  vim.keymap.set('n', 'gd',        vim.lsp.buf.definition, bufopts)
-  vim.keymap.set('n', 'gi',        vim.diagnostic.open_float, bufopts)
-  vim.keymap.set('n', 'g[',        vim.diagnostic.goto_prev, bufopts)
-  vim.keymap.set('n', 'g]',        vim.diagnostic.goto_next, bufopts)
+    print("LSP attached")
+    -- LSP-specific mappings. They're in this function so they only apply for LSP-enabled buffers
+    -- See `:help vim.lsp.*` for documentation on any of the below functions
+    local bufopts = { noremap=true, silent=true, buffer=bufnr }
+    vim.keymap.set('n', '<space>r',  vim.lsp.buf.references, bufopts)
+    vim.keymap.set('n', 'K',         vim.lsp.buf.hover, bufopts)
+    vim.keymap.set('n', '<leader>r', vim.lsp.buf.rename, bufopts)
+    vim.keymap.set('n', 'ga',        vim.lsp.buf.code_action, bufopts)
+    vim.keymap.set('n', 'gd',        vim.lsp.buf.definition, bufopts)
+    vim.keymap.set('n', 'gi',        vim.diagnostic.open_float, bufopts)
+    vim.keymap.set('n', 'g[',        vim.diagnostic.goto_prev, bufopts)
+    vim.keymap.set('n', 'g]',        vim.diagnostic.goto_next, bufopts)
 end
 
 local coq = require "coq"
 local lspconfig = require "lspconfig"
-local servers = { 'rust_analyzer', 'gopls', 'denols', 'solargraph' }
-lspconfig.gopls.setup(coq.lsp_ensure_capabilities({ on_attach = on_attach, }))
-lspconfig.denols.setup(coq.lsp_ensure_capabilities({ on_attach = on_attach, }))
-lspconfig.solargraph.setup(coq.lsp_ensure_capabilities({ on_attach = on_attach, }))
+local standard_servers = { 'gopls', 'denols', 'solargraph' }
+for _, lsp in ipairs(standard_servers) do
+    lspconfig[lsp].setup(coq.lsp_ensure_capabilities({ on_attach = on_attach, }))
+end
 lspconfig.rust_analyzer.setup(coq.lsp_ensure_capabilities({
     on_attach = on_attach,
     settings = {
@@ -235,6 +240,9 @@ lspconfig.rust_analyzer.setup(coq.lsp_ensure_capabilities({
                 callable = {
                     snippets = "add_parentheses",
                 },
+            },
+            checkOnSave = {
+                command = "clippy"
             },
         },
     },
@@ -302,13 +310,35 @@ remap('i', '<c-c>', [[pumvisible() ? "<c-e><c-c>" : "<c-c>"]], { expr = true, no
 remap('i', '<tab>', [[pumvisible() ? "<c-n>" : "<tab>"]], { expr = true, noremap = true })
 remap('i', '<s-tab>', [[pumvisible() ? "<c-p>" : "<bs>"]], { expr = true, noremap = true })
 
+require("tokyonight").setup({
+    style = "moon",
+    on_highlights = function(hl, c)
+        local greyBlue = "#929be5"
+        local windowSepBg = "#343952"
+        hl.StatusLine = {
+            bg = windowSepBg,
+            fg = "#e8ebfc",
+        }
+        hl.StatusLineNC = {
+            bg = windowSepBg,
+            fg = greyBlue,
+        }
+        hl.TabLine = {
+            bg = "#1e2030",
+            fg = greyBlue,
+        }
+        hl.TabLineSel = {
+            bg = hl.DiffText.bg,
+            fg = hl.String.fg,
+        }
+        hl.VertSplit = {
+            fg = windowSepBg,
+            bg = windowSepBg,
+        }
+    end,
+})
+
 EOL
 
-colo catppuccin
-Catppuccin macchiato
-highlight link ScrollView PmenuSbar
-hi StatusLine guibg=#343952 guifg=#e8ebfc
-hi StatusLineNC guibg=#343952 guifg=#929be5
-hi VertSplit guifg=#464f7f
-hi TabLine guibg=#1e2030 guifg=#929be5
+colo tokyonight
 
