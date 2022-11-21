@@ -160,7 +160,11 @@ Plug 'williamboman/mason.nvim' " for easy treesitter language installs
 Plug 'nvim-lua/plenary.nvim' " misc handy Lua functions
 Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
 Plug 'neovim/nvim-lspconfig'
-Plug 'ms-jpq/coq_nvim', { 'branch': 'coq' } " autocompletion
+"Plug 'ms-jpq/coq_nvim', { 'commit': '84ec5faf2aaf49819e626f64dd94f4e71cf575bc' } " autocompletion
+Plug 'L3MON4D3/LuaSnip'
+Plug 'hrsh7th/nvim-cmp'       " Autocompletion plugin
+Plug 'hrsh7th/cmp-nvim-lsp'   " LSP source for nvim-cmp
+Plug 'saadparwaiz1/cmp_luasnip'
 Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.0' } " file/buffer picker
 
 " Useful features
@@ -183,6 +187,14 @@ lua << EOL
 
 require("mason").setup()
 
+require'nvim-treesitter.configs'.setup {
+    -- ensure_installed = { "javascript", "rust", "ruby", "go", "markdown", "html" },
+    highlight = {
+        enable = true,
+        additional_vim_regex_highlighting = {"apache", "puppet", "xml"},
+    },
+}
+
 -- Global LSP floating border override
 local orig_util_open_floating_preview = vim.lsp.util.open_floating_preview
 function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
@@ -190,26 +202,6 @@ function vim.lsp.util.open_floating_preview(contents, syntax, opts, ...)
   opts.border = opts.border or "rounded"
   return orig_util_open_floating_preview(contents, syntax, opts, ...)
 end
-
-local v_minor = vim.version().minor
-local v_major = vim.version().major
-local use_ts_integrations =  false --v_major >= 1 or v_minor >= 8
-
-local telescope = require('telescope')
-local tsc_builtin = require('telescope.builtin')
-telescope.setup()
-vim.keymap.set('n', '<space>f', tsc_builtin.find_files, {})
-vim.keymap.set('n', '<space>b', tsc_builtin.buffers, {})
-vim.keymap.set('n', '<space>g', tsc_builtin.live_grep, {})
-vim.keymap.set('n', '<space>d', tsc_builtin.diagnostics, {})
-
-require('catppuccin').setup({
-    term_colors = false,
-    integrations = {
-        telescope = true,
-        treesitter = use_ts_integrations,
-    },
-})
 
 local on_attach = function(client, bufnr)
     print("LSP attached")
@@ -226,14 +218,20 @@ local on_attach = function(client, bufnr)
     vim.keymap.set('n', 'g]',        vim.diagnostic.goto_next, bufopts)
 end
 
-local coq = require "coq"
-local lspconfig = require "lspconfig"
+--local coq = require "coq"
+local caps = require("cmp_nvim_lsp").default_capabilities()
+local lspconfig = require("lspconfig")
 local standard_servers = { 'gopls', 'denols', 'solargraph' }
 for _, lsp in ipairs(standard_servers) do
-    lspconfig[lsp].setup(coq.lsp_ensure_capabilities({ on_attach = on_attach, }))
+    lspconfig[lsp].setup {
+        capabilities = caps,
+        on_attach = on_attach,
+    }
 end
-lspconfig.rust_analyzer.setup(coq.lsp_ensure_capabilities({
+
+lspconfig.rust_analyzer.setup {
     on_attach = on_attach,
+    capabilities = caps,
     settings = {
         ["rust-analyzer"] = {
             completion = {
@@ -246,32 +244,56 @@ lspconfig.rust_analyzer.setup(coq.lsp_ensure_capabilities({
             },
         },
     },
-}))
-
-
-require("indent_blankline").setup {
-    use_treesitter = true,
-    show_current_context = false,
-    show_current_context_start = false,
 }
 
-local vlines = require("lsp_lines")
-vlines.setup()
-vim.diagnostic.config({ virtual_text = false })
-vim.keymap.set(
-    "",
-    "<Leader>v",
-    vlines.toggle,
-    { desc = "Toggle lsp_lines" }
-)
-
-require'nvim-treesitter.configs'.setup {
-    -- ensure_installed = { "javascript", "rust", "ruby", "go", "markdown", "html" },
-    highlight = {
-        enable = true,
-        additional_vim_regex_highlighting = {"apache", "puppet", "xml"},
+local cmp = require("cmp")
+local luasnip = require("luasnip")
+cmp.setup {
+    snippet = {
+        expand = function(args)
+            luasnip.lsp_expand(args.body)
+        end,
+    },
+    mapping = cmp.mapping.preset.insert({
+        ['<C-d>'] = cmp.mapping.scroll_docs(-4),
+        ['<C-f>'] = cmp.mapping.scroll_docs(4),
+        ['<C-Space>'] = cmp.mapping.complete(),
+        ['<CR>'] = cmp.mapping.confirm {
+            behavior = cmp.ConfirmBehavior.Replace,
+            select = true,
+        },
+        ['<Tab>'] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+                cmp.select_next_item()
+            elseif luasnip.expand_or_jumpable() then
+                luasnip.expand_or_jump()
+            else
+                fallback()
+            end
+        end, { 'i', 's' }),
+        ['<S-Tab>'] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+                cmp.select_prev_item()
+            elseif luasnip.jumpable(-1) then
+                luasnip.jump(-1)
+            else
+                fallback()
+            end
+        end, { 'i', 's' }),
+    }),
+    sources = {
+        { name = 'nvim_lsp' },
+        { name = 'luasnip' },
     },
 }
+
+local telescope = require('telescope')
+local tsc_builtin = require('telescope.builtin')
+telescope.setup()
+vim.keymap.set('n', '<space>f', tsc_builtin.find_files, {})
+vim.keymap.set('n', '<space>b', tsc_builtin.buffers, {})
+vim.keymap.set('n', '<space>g', tsc_builtin.live_grep, {})
+vim.keymap.set('n', '<space>d', tsc_builtin.diagnostics, {})
 
 
 local nap = require("nvim-autopairs")
@@ -304,11 +326,36 @@ end
 remap('i', '<cr>', 'v:lua.MUtils.CR()', { expr = true, noremap = true })
 remap('i', '<bs>', 'v:lua.MUtils.BS()', { expr = true, noremap = true })
 
+require("indent_blankline").setup {
+    use_treesitter = true,
+    show_current_context = false,
+    show_current_context_start = false,
+}
+
+local vlines = require("lsp_lines")
+vlines.setup()
+vim.diagnostic.config({ virtual_text = false })
+vim.keymap.set(
+    "",
+    "<Leader>v",
+    vlines.toggle,
+    { desc = "Toggle lsp_lines" }
+)
+
+
 -- these mappings are coq recommended mappings unrelated to nvim-autopairs
-remap('i', '<esc>', [[pumvisible() ? "<c-e><esc>" : "<esc>"]], { expr = true, noremap = true })
-remap('i', '<c-c>', [[pumvisible() ? "<c-e><c-c>" : "<c-c>"]], { expr = true, noremap = true })
-remap('i', '<tab>', [[pumvisible() ? "<c-n>" : "<tab>"]], { expr = true, noremap = true })
-remap('i', '<s-tab>', [[pumvisible() ? "<c-p>" : "<bs>"]], { expr = true, noremap = true })
+-- remap('i', '<esc>', [[pumvisible() ? "<c-e><esc>" : "<esc>"]], { expr = true, noremap = true })
+-- remap('i', '<c-c>', [[pumvisible() ? "<c-e><c-c>" : "<c-c>"]], { expr = true, noremap = true })
+-- remap('i', '<tab>', [[pumvisible() ? "<c-n>" : "<tab>"]], { expr = true, noremap = true })
+-- remap('i', '<s-tab>', [[pumvisible() ? "<c-p>" : "<bs>"]], { expr = true, noremap = true })
+
+require('catppuccin').setup({
+    term_colors = false,
+    integrations = {
+        telescope = true,
+        treesitter = true,
+    },
+})
 
 require("tokyonight").setup({
     style = "moon",
