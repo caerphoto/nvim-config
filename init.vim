@@ -26,6 +26,7 @@ autocmd FileType html setlocal colorcolumn=0 textwidth=0 " Allow HTML lines to b
 autocmd FileType sh setlocal textwidth=0
 autocmd BufRead * match ExtraWhitespace /\s\+$/  
 autocmd BufRead * highlight ExtraWhitespace ctermbg=white guifg=#FF0000
+autocmd BufWritePre *.js lua vim.lsp.buf.format()
 
 " Add format option 'w' to add trailing white space, indicating that paragraph
 " continues on next line. This is to be used with mutt's 'text_flowed' option.
@@ -37,10 +38,15 @@ augroup END " }
 set nocompatible
 set backup
 if has('win32') || has('win16')
-    set backupdir=stdpath('config')."\backup"
+    let g:backupdir=expand(stdpath('config') . '\backup')
 else
-    set backupdir=stdpath('config')."/backup"
+    let g:backupdir=expand(stdpath('config') . '/backup')
 endif
+if !isdirectory(g:backupdir)
+   call mkdir(g:backupdir, "p")
+endif
+let &backupdir=g:backupdir
+
 set updatetime=2000 " milliseconds to wait before writing backup file
 set hidden " Allow editing of different files without saving current buffer first.
 " set runtimepath^=~/.vim,~/.vim/after
@@ -80,6 +86,7 @@ set expandtab
 set shiftround
 set autoindent
 set backspace=indent,eol,start
+set diffopt=filler,context:6
 
 set formatoptions=tcrqnljv1 " see fo-table help for details
 
@@ -97,11 +104,13 @@ set smartcase
 set hlsearch
 set incsearch
 
-set guifont=JetBrains_Mono_Light:h12
+set guifont=JetBrainsMono_Nerd_Font_Mono:h12
 set background=dark
 
 " \ is a bit awkward to reach
 let mapleader = ","
+
+nnoremap <silent> <D-1> :GonvimSidebarToggle<CR>
 
 " Bubble single lines
 nnoremap <D-k> ddkP
@@ -131,7 +140,7 @@ inoremap <C-l> <Del>
 vnoremap <silent> K :m'>-2<CR>gv=gv
 vnoremap <silent> J :m'>+1<CR>gv=gv
 
-if exists("g:neovide")
+if exists("g:neovide") || exists("g:goneovim")
     " Make stuff feel more macOS-native
     let g:neovide_input_use_logo = v:true
     nnoremap <silent> <D-v> "+p
@@ -141,10 +150,10 @@ if exists("g:neovide")
     let g:neovide_cursor_vfx_mode = ""
     let g:neovide_cursor_animation_length = 0
     let g:neovide_refresh_rate_idle = 5
+    set background=light
     cd ~
 endif
 
-" runtime macros/matchit.vim
 
 let g:go_bin_path = '~/Applications/homebrew/opt/go/bin'
 let g:matchparen_insert_timeout=5
@@ -158,31 +167,37 @@ call plug#begin()
 " Essential things
 Plug 'williamboman/mason.nvim' " for easy treesitter language installs
 Plug 'nvim-lua/plenary.nvim' " misc handy Lua functions
-Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' }
-Plug 'neovim/nvim-lspconfig'
-"Plug 'ms-jpq/coq_nvim', { 'commit': '84ec5faf2aaf49819e626f64dd94f4e71cf575bc' } " autocompletion
-Plug 'L3MON4D3/LuaSnip'
-Plug 'hrsh7th/nvim-cmp'       " Autocompletion plugin
-Plug 'hrsh7th/cmp-nvim-lsp'   " LSP source for nvim-cmp
+Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' } " better syntax parsing/highlighting
+Plug 'neovim/nvim-lspconfig' " sensible default configs for LSP
+Plug 'L3MON4D3/LuaSnip'       " ?
+Plug 'hrsh7th/nvim-cmp'         " Autocompletion plugin
+Plug 'hrsh7th/cmp-nvim-lsp'     " LSP source for nvim-cmp
+Plug 'hrsh7th/cmp-buffer'       " buffer source for nvim-cmp
 Plug 'saadparwaiz1/cmp_luasnip'
 Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.0' } " file/buffer picker
+" Fuzzy finder
 "Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
 Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && cmake --install build --prefix build' }
 
 " Useful features
-Plug 'tpope/vim-commentary', { 'branch': 'master' }
-Plug 'tpope/vim-sleuth', { 'branch': 'master' }
-Plug 'windwp/nvim-autopairs'
+Plug 'tpope/vim-commentary', { 'branch': 'master' } " commenting plugin
+Plug 'tpope/vim-sleuth', { 'branch': 'master' }     " set shiftwidth etc automatically from buffer content
+Plug 'windwp/nvim-autopairs'                        " auto-pair (), {} etc
 Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
 
 " Visual things
 Plug 'nvim-tree/nvim-web-devicons'
-Plug 'https://git.sr.ht/~whynothugo/lsp_lines.nvim'
-Plug 'dstein64/nvim-scrollview', { 'branch': 'main' }
-Plug 'lukas-reineke/indent-blankline.nvim'
+Plug 'https://git.sr.ht/~whynothugo/lsp_lines.nvim' " lines pointing at LSP stuff
 
+" GoNeovim has these built in but the plugin versions are better/more customisable
+Plug 'dstein64/nvim-scrollview', { 'branch': 'main' }  " scrollbar
+Plug 'lukas-reineke/indent-blankline.nvim' " indent guides
+
+" Colour schemes
 Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
 Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
+Plug 'embark-theme/vim', { 'as': 'embark', 'branch': 'main' }
+Plug 'rose-pine/neovim', { 'as': 'rose-pine' }
 call plug#end()
 
 lua << EOL
@@ -223,7 +238,7 @@ end
 --local coq = require "coq"
 local caps = require("cmp_nvim_lsp").default_capabilities()
 local lspconfig = require("lspconfig")
-local standard_servers = { 'gopls', 'denols', 'solargraph' }
+local standard_servers = { 'gopls', 'tsserver', 'solargraph' }
 for _, lsp in ipairs(standard_servers) do
     lspconfig[lsp].setup {
         capabilities = caps,
@@ -335,11 +350,11 @@ end
 remap('i', '<cr>', 'v:lua.MUtils.CR()', { expr = true, noremap = true })
 remap('i', '<bs>', 'v:lua.MUtils.BS()', { expr = true, noremap = true })
 
-require("indent_blankline").setup {
-    use_treesitter = true,
-    show_current_context = false,
-    show_current_context_start = false,
-}
+--require("indent_blankline").setup {
+--    use_treesitter = true,
+--    show_current_context = false,
+--    show_current_context_start = false,
+--}
 
 local vlines = require("lsp_lines")
 vlines.setup()
@@ -363,6 +378,20 @@ require('catppuccin').setup({
     integrations = {
         telescope = true,
         treesitter = true,
+    },
+})
+
+require('rose-pine').setup({
+    dark_variant = "moon",
+    disable_italics = false,
+    highlight_groups = {
+        DiffAdd = { bg = "#114422" },
+        DiffDelete = { bg = "#551111", fg = "#880000" },
+        DiffText = { fg = "#88ffaa" },
+        StatusLine = { bg = "highlight_high", fg = "text" },
+        StatusLineNC = { bg = "highlight_high", fg = "muted" },
+        FoldColumn = { fg = "highlight_high" },
+        IndentBlanklineChar = { fg = "highlight_high" },
     },
 })
 
@@ -396,5 +425,5 @@ require("tokyonight").setup({
 
 EOL
 
-colo tokyonight
+colo rose-pine
 
