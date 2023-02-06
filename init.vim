@@ -392,6 +392,10 @@ require('rose-pine').setup({
         StatusLineNC = { bg = "highlight_high", fg = "muted" },
         FoldColumn = { fg = "highlight_high" },
         IndentBlanklineChar = { fg = "highlight_high" },
+        VertSplit = { fg = "muted" },
+        TabLineFill = { bg = "muted" },
+        TabLine = { bg = "muted", fg = "text" },
+        TabLineSel = { bg = "text", fg = "base" },
     },
 })
 
