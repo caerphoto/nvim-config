@@ -104,13 +104,12 @@ set smartcase
 set hlsearch
 set incsearch
 
-set guifont=JetBrainsMono_Nerd_Font_Mono:h12
-set background=dark
+set guifont=IBM\ Plex\ Mono,BlexMono\ Nerd\ Font\ Mono:h12
 
 " \ is a bit awkward to reach
 let mapleader = ","
 
-nnoremap <silent> <D-1> :GonvimSidebarToggle<CR>
+nnoremap <silent> <D-1> :GonvimFilerOpen<CR>
 
 " Bubble single lines
 nnoremap <D-k> ddkP
@@ -140,7 +139,7 @@ inoremap <C-l> <Del>
 vnoremap <silent> K :m'>-2<CR>gv=gv
 vnoremap <silent> J :m'>+1<CR>gv=gv
 
-if exists("g:neovide") || exists("g:goneovim")
+if exists("g:neovide") || exists("g:goneovim") || exists("g:fvim_loaded")
     " Make stuff feel more macOS-native
     let g:neovide_input_use_logo = v:true
     nnoremap <silent> <D-v> "+p
@@ -150,9 +149,16 @@ if exists("g:neovide") || exists("g:goneovim")
     let g:neovide_cursor_vfx_mode = ""
     let g:neovide_cursor_animation_length = 0
     let g:neovide_refresh_rate_idle = 5
-    set background=light
     cd ~
 endif
+
+if has('gui_running') || exists("g:neovide") || exists("g:goneovim")
+    set background=light
+else
+    set background=dark
+endif
+
+set guioptions+=er
 
 
 let g:go_bin_path = '~/Applications/homebrew/opt/go/bin'
@@ -200,6 +206,47 @@ Plug 'embark-theme/vim', { 'as': 'embark', 'branch': 'main' }
 Plug 'rose-pine/neovim', { 'as': 'rose-pine' }
 call plug#end()
 
+" Tab line customisation, from:
+" https://stackoverflow.com/questions/7238113/customising-the-colours-of-vims-tab-bar
+
+" The MyTabLabel() function is called for each tab page to get its label:
+function MyTabLabel(n)
+  let buflist = tabpagebuflist(a:n)
+  let winnr = tabpagewinnr(a:n)
+  return bufname(buflist[winnr - 1])
+endfunction
+
+" This function sets the whole tab line
+function MyTabLine()
+  let s = ''
+  for i in range(tabpagenr('$'))
+    " select the highlighting
+    if i + 1 == tabpagenr()
+      let s .= '%#TabLineSel#'
+    else
+      let s .= '%#TabLine#'
+    endif
+
+    " set the tab page number (for mouse clicks)
+    let s .= '%' . (i + 1) . 'T'
+
+    " the label is made by MyTabLabel()
+    let s .= ' ' . (i + 1) . ' %{MyTabLabel(' . (i + 1) . ')} ▕'
+  endfor
+
+  " after the last tab fill with TabLineFill and reset tab page nr
+  let s .= '%#TabLineFill#%T'
+
+  " right-align the label to close the current tab page
+  if tabpagenr('$') > 1
+    let s .= '%=%#TabLine#%999X[close]'
+  endif
+
+  return s
+endfunction
+
+set tabline=%!MyTabLine()
+
 lua << EOL
 
 require("mason").setup()
@@ -208,7 +255,7 @@ require'nvim-treesitter.configs'.setup {
     -- ensure_installed = { "javascript", "rust", "ruby", "go", "markdown", "html" },
     highlight = {
         enable = true,
-        additional_vim_regex_highlighting = {"apache", "puppet", "xml"},
+        additional_vim_regex_highlighting = {"apache", "puppet", "xml", "tmux"},
     },
 }
 
@@ -311,6 +358,17 @@ cmp.setup {
 }
 
 local telescope = require('telescope')
+local tsc_actions = require('telescope.actions')
+telescope.setup {
+    defaults = {
+        mappings = {
+            i = {
+                ["<esc>"] = tsc_actions.close
+            }
+        },
+        disable_devicons = true,
+    }
+}
 local tsc_builtin = require('telescope.builtin')
 telescope.load_extension("fzf")
 
@@ -350,11 +408,11 @@ end
 remap('i', '<cr>', 'v:lua.MUtils.CR()', { expr = true, noremap = true })
 remap('i', '<bs>', 'v:lua.MUtils.BS()', { expr = true, noremap = true })
 
---require("indent_blankline").setup {
---    use_treesitter = true,
---    show_current_context = false,
---    show_current_context_start = false,
---}
+require("indent_blankline").setup {
+    use_treesitter = true,
+    show_current_context = false,
+    show_current_context_start = false,
+}
 
 local vlines = require("lsp_lines")
 vlines.setup()
@@ -366,12 +424,6 @@ vim.keymap.set(
     { desc = "Toggle lsp_lines" }
 )
 
-
--- these mappings are coq recommended mappings unrelated to nvim-autopairs
--- remap('i', '<esc>', [[pumvisible() ? "<c-e><esc>" : "<esc>"]], { expr = true, noremap = true })
--- remap('i', '<c-c>', [[pumvisible() ? "<c-e><c-c>" : "<c-c>"]], { expr = true, noremap = true })
--- remap('i', '<tab>', [[pumvisible() ? "<c-n>" : "<tab>"]], { expr = true, noremap = true })
--- remap('i', '<s-tab>', [[pumvisible() ? "<c-p>" : "<bs>"]], { expr = true, noremap = true })
 
 require('catppuccin').setup({
     term_colors = false,
