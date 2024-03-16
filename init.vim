@@ -11,15 +11,16 @@ filetype plugin on
 :autocmd!
 
 autocmd BufNewFile,BufRead *.mako setlocal syntax=mako
-autocmd BufNewFile,BufRead *.md setlocal filetype=markdown linebreak textwidth=80 colorcolumn=80 foldcolumn=4 numberwidth=5
+autocmd BufNewFile,BufRead *.md setlocal filetype=markdown linebreak textwidth=80 colorcolumn=80 numberwidth=5
 autocmd BufNewFile,BufRead *.ejs set filetype=html
 autocmd BufNewFile,BufRead *.html.erb set filetype=html
 autocmd BufNewFile,BufRead *.html.hbs set filetype=html
 autocmd BufNewFile,BufRead *.hbs.html set filetype=html
 autocmd BufNewFile,BufRead *.pug set filetype=jade
-autocmd BufNewFile,BufRead *.pp syntax enable setlocal synmaxcol=500
+autocmd BufNewFile,BufRead *.pp setlocal ft=puppet synmaxcol=500
 autocmd BufNewFile,BufRead .PHSEARCH_SETTINGS set filetype=yaml
 autocmd BufNewFile,BufRead *phgroup.com*.conf,generic.conf,httpd.conf,server.conf set filetype=apache
+autocmd FileType apache syntax on
 autocmd FileType gitcommit setlocal colorcolumn=51
 autocmd FileType text|markdown setlocal fo+=al " 'a' is automatic paragraph formatting
 autocmd FileType html setlocal colorcolumn=0 textwidth=0 " Allow HTML lines to be much longer than other code.
@@ -66,7 +67,7 @@ set fillchars=vert:▍,fold:╌,foldopen:▾,foldsep:│,foldclose:▸
 set laststatus=2 " 2 means always
 set statusline=%#TabLineSel#[%02n]%0*\ %{expand('%:.')}\ %([%3*%m%*%r%h]%)%=%4l,%c\ ·\ %3P\ of\ %L
 set diffopt=vertical
-set signcolumn=yes
+set signcolumn=no
 
 set foldlevel=99
 set foldnestmax=5
@@ -104,12 +105,14 @@ set smartcase
 set hlsearch
 set incsearch
 
-set guifont=IBM\ Plex\ Mono,BlexMono\ Nerd\ Font\ Mono:h12
+set guifont=JetBrainsMono_Nerd_Font_Mono:h12
+set linespace=1
 
 " \ is a bit awkward to reach
 let mapleader = ","
 
-nnoremap <silent> <D-1> :GonvimFilerOpen<CR>
+nnoremap <silent> <D-f> :NvimTreeToggle<CR>
+nnoremap <silent> <C-t> :NvimTreeToggle<CR>
 
 " Bubble single lines
 nnoremap <D-k> ddkP
@@ -130,6 +133,11 @@ nnoremap <C-j> <C-w>j
 nnoremap <C-k> <C-w>k
 nnoremap <C-l> <C-w>l
 
+" GoNeoVim workspaces
+nnoremap <silent> gwc :GonvimWorkspaceNew<cr>
+nnoremap <silent> gwn :GonvimWorkspaceNext<cr>
+nnoremap <silent> gwp :GonvimWorkspacePrevious<cr>
+
 " Expand %% into the current file's path.
 cnoremap %% <C-R>=expand('%:.:h').'/'<cr>
 
@@ -149,11 +157,14 @@ if exists("g:neovide") || exists("g:goneovim") || exists("g:fvim_loaded")
     let g:neovide_cursor_vfx_mode = ""
     let g:neovide_cursor_animation_length = 0
     let g:neovide_refresh_rate_idle = 5
+    let g:neovide_floating_z_height = 2
+    let g:neovide_floating_shadows = v:false
     cd ~
 endif
 
 if has('gui_running') || exists("g:neovide") || exists("g:goneovim")
-    set background=light
+    " set background=light
+    set background=dark
 else
     set background=dark
 endif
@@ -164,47 +175,6 @@ set guioptions+=er
 let g:go_bin_path = '~/Applications/homebrew/opt/go/bin'
 let g:matchparen_insert_timeout=5
 let g:clang_library_path="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/"
-let g:indent_blankline_use_treesitter = v:true
-let g:indent_blankline_char = "▏"
-" I use C-hjkl for window navigation, so need to prevent COQ from overriding those
-let g:coq_settings = { "auto_start": "shut-up", "keymap.recommended": v:false, "keymap.bigger_preview": v:null, "keymap.jump_to_mark": v:null }
-
-call plug#begin()
-" Essential things
-Plug 'williamboman/mason.nvim' " for easy treesitter language installs
-Plug 'nvim-lua/plenary.nvim' " misc handy Lua functions
-Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' } " better syntax parsing/highlighting
-Plug 'neovim/nvim-lspconfig' " sensible default configs for LSP
-Plug 'L3MON4D3/LuaSnip'       " ?
-Plug 'hrsh7th/nvim-cmp'         " Autocompletion plugin
-Plug 'hrsh7th/cmp-nvim-lsp'     " LSP source for nvim-cmp
-Plug 'hrsh7th/cmp-buffer'       " buffer source for nvim-cmp
-Plug 'saadparwaiz1/cmp_luasnip'
-Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.0' } " file/buffer picker
-" Fuzzy finder
-"Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
-Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release && cmake --build build --config Release && cmake --install build --prefix build' }
-
-" Useful features
-Plug 'tpope/vim-commentary', { 'branch': 'master' } " commenting plugin
-Plug 'tpope/vim-sleuth', { 'branch': 'master' }     " set shiftwidth etc automatically from buffer content
-Plug 'windwp/nvim-autopairs'                        " auto-pair (), {} etc
-Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
-
-" Visual things
-Plug 'nvim-tree/nvim-web-devicons'
-Plug 'https://git.sr.ht/~whynothugo/lsp_lines.nvim' " lines pointing at LSP stuff
-
-" GoNeovim has these built in but the plugin versions are better/more customisable
-Plug 'dstein64/nvim-scrollview', { 'branch': 'main' }  " scrollbar
-Plug 'lukas-reineke/indent-blankline.nvim' " indent guides
-
-" Colour schemes
-Plug 'catppuccin/nvim', { 'as': 'catppuccin' }
-Plug 'folke/tokyonight.nvim', { 'branch': 'main' }
-Plug 'embark-theme/vim', { 'as': 'embark', 'branch': 'main' }
-Plug 'rose-pine/neovim', { 'as': 'rose-pine' }
-call plug#end()
 
 " Tab line customisation, from:
 " https://stackoverflow.com/questions/7238113/customising-the-colours-of-vims-tab-bar
@@ -213,7 +183,8 @@ call plug#end()
 function MyTabLabel(n)
   let buflist = tabpagebuflist(a:n)
   let winnr = tabpagewinnr(a:n)
-  return bufname(buflist[winnr - 1])
+  let lbl = bufname(buflist[winnr - 1])
+  return fnamemodify(lbl, ":t")
 endfunction
 
 " This function sets the whole tab line
@@ -230,8 +201,19 @@ function MyTabLine()
     " set the tab page number (for mouse clicks)
     let s .= '%' . (i + 1) . 'T'
 
+    let wc = tabpagewinnr(i+1, "$")
+    if wc == 1
+        let wct = ''
+    else
+        if i + 1 == tabpagenr()
+            let wct = '%#TabLineSelWC# / ' . wc . '%#TabLineSel#'
+        else
+            let wct =    '%#TabLineWC# / ' . wc . '%#TabLine#'
+        end
+    endif
+
     " the label is made by MyTabLabel()
-    let s .= ' ' . (i + 1) . ' %{MyTabLabel(' . (i + 1) . ')} ▕'
+    let s .= '  %{MyTabLabel(' . (i + 1) . ')}' . wct . ' ▕'
   endfor
 
   " after the last tab fill with TabLineFill and reset tab page nr
@@ -239,7 +221,7 @@ function MyTabLine()
 
   " right-align the label to close the current tab page
   if tabpagenr('$') > 1
-    let s .= '%=%#TabLine#%999X[close]'
+    let s .= '%=%#TabLine#%999X[X]'
   endif
 
   return s
@@ -247,7 +229,52 @@ endfunction
 
 set tabline=%!MyTabLine()
 
+" ------------- Plugins ------------------
+
+call plug#begin()
+" Essential things
+Plug 'williamboman/mason.nvim' " for easy treesitter language installs
+Plug 'nvim-lua/plenary.nvim' " misc handy Lua functions
+Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' } " better syntax parsing/highlighting
+Plug 'neovim/nvim-lspconfig' " sensible default configs for LSP
+Plug 'L3MON4D3/LuaSnip'       " ?
+Plug 'hrsh7th/nvim-cmp'         " Autocompletion plugin
+Plug 'hrsh7th/cmp-nvim-lsp'     " LSP source for nvim-cmp
+Plug 'hrsh7th/cmp-buffer'       " buffer source for nvim-cmp
+Plug 'saadparwaiz1/cmp_luasnip'
+Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.4' } " file/buffer picker
+Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
+Plug 'nvim-telescope/telescope-ui-select.nvim'
+Plug 'nvim-tree/nvim-tree.lua'
+
+" Useful features
+Plug 'tpope/vim-commentary', { 'branch': 'master' } " commenting plugin
+Plug 'tpope/vim-sleuth', { 'branch': 'master' }     " set shiftwidth etc automatically from buffer content
+Plug 'windwp/nvim-autopairs'                        " auto-pair (), {} etc
+Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
+
+Plug 'rodjek/vim-puppet/' " Puppet syntax highlighting
+
+Plug 'natecraddock/workspaces.nvim'
+Plug 'natecraddock/sessions.nvim'
+
+" Visual things
+Plug 'nvim-tree/nvim-web-devicons'
+Plug 'https://git.sr.ht/~whynothugo/lsp_lines.nvim' " lines pointing at LSP stuff
+
+" GoNeovim has these built in but the plugin versions are better/more customisable
+"Plug 'dstein64/nvim-scrollview', { 'branch': 'main' }  " scrollbar
+Plug 'lukas-reineke/indent-blankline.nvim' " indent guides
+
+" Colour scheme
+Plug 'rose-pine/neovim', { 'as': 'rose-pine' }
+call plug#end()
+
+
 lua << EOL
+
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
 
 require("mason").setup()
 
@@ -255,7 +282,7 @@ require'nvim-treesitter.configs'.setup {
     -- ensure_installed = { "javascript", "rust", "ruby", "go", "markdown", "html" },
     highlight = {
         enable = true,
-        additional_vim_regex_highlighting = {"apache", "puppet", "xml", "tmux"},
+        additional_vim_regex_highlighting = {"apache", "xml", "tmux"},
     },
 }
 
@@ -282,10 +309,9 @@ local on_attach = function(client, bufnr)
     vim.keymap.set('n', 'g]',        vim.diagnostic.goto_next, bufopts)
 end
 
---local coq = require "coq"
 local caps = require("cmp_nvim_lsp").default_capabilities()
 local lspconfig = require("lspconfig")
-local standard_servers = { 'gopls', 'tsserver', 'solargraph' }
+local standard_servers = { 'gopls', 'tsserver', 'solargraph', 'pylsp' }
 for _, lsp in ipairs(standard_servers) do
     lspconfig[lsp].setup {
         capabilities = caps,
@@ -357,6 +383,23 @@ cmp.setup {
     })
 }
 
+require("sessions").setup({
+    events = { "WinEnter" },
+    session_filepath = vim.fn.stdpath("data") .. "/sessions",
+    absolute = true,
+})
+require("workspaces").setup({
+    hooks = {
+        open_pre = {
+            "SessionsStop",
+            "silent %bdelete!",
+        },
+        open = function()
+            require("sessions").load(nil, { silent = true })
+        end,
+    }
+})
+
 local telescope = require('telescope')
 local tsc_actions = require('telescope.actions')
 telescope.setup {
@@ -367,16 +410,22 @@ telescope.setup {
             }
         },
         disable_devicons = true,
+    },
+    pickers = {
+        buffers = {
+            only_cwd = true,
+        }
     }
 }
+telescope.load_extension('fzf')
 local tsc_builtin = require('telescope.builtin')
-telescope.load_extension("fzf")
-
 vim.keymap.set('n', '<space>f', tsc_builtin.find_files, {})
 vim.keymap.set('n', '<space>b', tsc_builtin.buffers, {})
 vim.keymap.set('n', '<space>g', tsc_builtin.live_grep, {})
 vim.keymap.set('n', '<space>d', tsc_builtin.diagnostics, {})
-
+vim.keymap.set('n', '<space>w', '<Cmd>Telescope workspaces<CR>', {silent=true})
+telescope.load_extension('ui-select')
+telescope.load_extension('workspaces')
 
 local nap = require("nvim-autopairs")
 local remap = vim.api.nvim_set_keymap
@@ -408,11 +457,6 @@ end
 remap('i', '<cr>', 'v:lua.MUtils.CR()', { expr = true, noremap = true })
 remap('i', '<bs>', 'v:lua.MUtils.BS()', { expr = true, noremap = true })
 
-require("indent_blankline").setup {
-    use_treesitter = true,
-    show_current_context = false,
-    show_current_context_start = false,
-}
 
 local vlines = require("lsp_lines")
 vlines.setup()
@@ -424,62 +468,90 @@ vim.keymap.set(
     { desc = "Toggle lsp_lines" }
 )
 
+local whitespace = {}
+if vim.opt.background._value == "light" then
+    local ibl_highlights = {
+        "RainbowRed",
+        "RainbowYellow",
+        "RainbowGreen",
+        "RainbowCyan",
+        "RainbowBlue",
+        "RainbowViolet",
+    }
+    local hooks = require("ibl.hooks")
+    hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
+        vim.api.nvim_set_hl(0, "RainbowRed",    { bg = "#faeded" })
+        vim.api.nvim_set_hl(0, "RainbowYellow", { bg = "#fafaed" })
+        vim.api.nvim_set_hl(0, "RainbowGreen",  { bg = "#eefaed" })
+        vim.api.nvim_set_hl(0, "RainbowCyan",   { bg = "#edf7fa" })
+        vim.api.nvim_set_hl(0, "RainbowBlue",   { bg = "#f2edfa" })
+        vim.api.nvim_set_hl(0, "RainbowViolet", { bg = "#faedf5" })
+    end)
+    whitespace = { highlight = ibl_highlights }
+end
+require("ibl").setup {
+    scope = { enabled = false },
+    indent = { highlight = "FoldColumn", char = "▏" },
+    whitespace = whitespace,
+}
 
-require('catppuccin').setup({
-    term_colors = false,
-    integrations = {
-        telescope = true,
-        treesitter = true,
-    },
+require("nvim-tree").setup({
+    view = { float = {
+        enable = true,
+        open_win_config = {
+            relative = "editor",
+            width = 80,
+            height = 70,
+            row = 2,
+            col = 5,
+            border = "rounded",
+        },
+    }},
 })
 
 require('rose-pine').setup({
     dark_variant = "moon",
-    disable_italics = false,
+    styles = {
+        italic = false,
+        bold = true,
+        transparency = false,
+    },
     highlight_groups = {
-        DiffAdd = { bg = "#114422" },
-        DiffDelete = { bg = "#551111", fg = "#880000" },
-        DiffText = { fg = "#88ffaa" },
-        StatusLine = { bg = "highlight_high", fg = "text" },
-        StatusLineNC = { bg = "highlight_high", fg = "muted" },
-        FoldColumn = { fg = "highlight_high" },
-        IndentBlanklineChar = { fg = "highlight_high" },
-        VertSplit = { fg = "muted" },
-        TabLineFill = { bg = "muted" },
-        TabLine = { bg = "muted", fg = "text" },
-        TabLineSel = { bg = "text", fg = "base" },
+        DiffAdd =             { bg = "#114422" },
+        DiffDelete =          { bg = "#551111",   fg = "#880000" },
+        DiffText =            { fg = "#88ffaa" },
+        StatusLine =          { bg = "foam",      fg = "base" },
+        StatusLineNC =        { bg = "pine",      fg = "base" },
+        FoldColumn =          {                   fg = "highlight_high" },
+        IndentBlanklineChar = {                   fg = "highlight_high" },
+        FloatBorder =         {                   fg = "text" },
+        TelescopeBorder =     {                   fg = "text" },
+        VertSplit =           {                   fg = "muted" },
+        TabLineFill =         { bg = "muted" },
+        TabLine =             { bg = "muted",     fg = "base" },
+        TabLineWC =           { bg = "muted",     fg = "highlight_high" },
+        TabLineSel =          { bg = "text",      fg = "base" },
+        TabLineSelWC =        { bg = "text",      fg = "pine" },
+
     },
 })
 
-require("tokyonight").setup({
-    style = "moon",
-    on_highlights = function(hl, c)
-        local greyBlue = "#929be5"
-        local windowSepBg = "#343952"
-        hl.StatusLine = {
-            bg = windowSepBg,
-            fg = "#e8ebfc",
-        }
-        hl.StatusLineNC = {
-            bg = windowSepBg,
-            fg = greyBlue,
-        }
-        hl.TabLine = {
-            bg = "#1e2030",
-            fg = greyBlue,
-        }
-        hl.TabLineSel = {
-            bg = hl.DiffText.bg,
-            fg = hl.String.fg,
-        }
-        hl.VertSplit = {
-            fg = windowSepBg,
-            bg = windowSepBg,
-        }
-    end,
-})
+vim.cmd("colorscheme rose-pine")
 
 EOL
 
-colo rose-pine
+hi StatusLine   blend=0
+hi StatusLineNC blend=0
+hi DiagnosticVirtualTextInfo  blend=0
+hi DiagnosticVirtualTextHint  blend=0
+hi DiagnosticVirtualTextWarn  blend=0
+hi DiagnosticVirtualTextError blend=0
+hi DiagnosticVirtualTextHint  blend=0
 
+" GoNeovim's undercurls cover the text a bit too much; underline is cleaner
+if exists("g:goneovim")
+    hi DiagnosticUnderlineError gui=underline
+    hi DiagnosticUnderlineWarn gui=underline
+    hi DiagnosticUnderlineInfo gui=underline
+    hi DiagnosticUnderlineHint gui=underline
+endif
