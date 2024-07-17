@@ -70,7 +70,7 @@ set diffopt=vertical
 set signcolumn=no
 
 set foldlevel=99
-set foldnestmax=5
+set foldnestmax=9
 set foldcolumn=1
 set foldmethod=expr
 set foldexpr=nvim_treesitter#foldexpr()
@@ -105,8 +105,8 @@ set smartcase
 set hlsearch
 set incsearch
 
-set guifont=JetBrainsMono_Nerd_Font_Mono:h12
-set linespace=1
+set guifont=BlexMono_Nerd_Font_Mono:h12
+set linespace=0
 
 " \ is a bit awkward to reach
 let mapleader = ","
@@ -176,6 +176,50 @@ let g:go_bin_path = '~/Applications/homebrew/opt/go/bin'
 let g:matchparen_insert_timeout=5
 let g:clang_library_path="/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/"
 
+" ------------- Plugins ------------------
+
+call plug#begin()
+" Essential things
+Plug 'williamboman/mason.nvim' " for easy treesitter language installs
+Plug 'nvim-lua/plenary.nvim' " misc handy Lua functions
+Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' } " better syntax parsing/highlighting
+Plug 'neovim/nvim-lspconfig' " sensible default configs for LSP
+Plug 'L3MON4D3/LuaSnip'       " ?
+Plug 'hrsh7th/nvim-cmp'         " Autocompletion plugin
+Plug 'hrsh7th/cmp-nvim-lsp'     " LSP source for nvim-cmp
+Plug 'hrsh7th/cmp-buffer'       " buffer source for nvim-cmp
+Plug 'saadparwaiz1/cmp_luasnip'
+Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.4' } " file/buffer picker
+Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
+Plug 'nvim-telescope/telescope-ui-select.nvim'
+Plug 'nvim-tree/nvim-tree.lua'
+Plug 'nvim-telescope/telescope-file-browser.nvim'
+
+" Useful features
+Plug 'tpope/vim-commentary', { 'branch': 'master' } " commenting plugin
+Plug 'tpope/vim-sleuth', { 'branch': 'master' }     " set shiftwidth etc automatically from buffer content
+Plug 'windwp/nvim-autopairs'                        " auto-pair (), {} etc
+Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
+Plug 'linrongbin16/lsp-progress.nvim'
+Plug 'j-hui/fidget.nvim'
+
+Plug 'rodjek/vim-puppet/' " Puppet syntax highlighting
+
+Plug 'natecraddock/workspaces.nvim'
+Plug 'natecraddock/sessions.nvim'
+
+" Visual things
+Plug 'nvim-tree/nvim-web-devicons'
+Plug 'https://git.sr.ht/~whynothugo/lsp_lines.nvim' " lines pointing at LSP stuff
+
+" GoNeovim has these built in but the plugin versions are better/more customisable
+"Plug 'dstein64/nvim-scrollview', { 'branch': 'main' }  " scrollbar
+Plug 'lukas-reineke/indent-blankline.nvim' " indent guides
+
+" Colour scheme
+Plug 'rose-pine/neovim', { 'as': 'rose-pine' }
+call plug#end()
+
 " Tab line customisation, from:
 " https://stackoverflow.com/questions/7238113/customising-the-colours-of-vims-tab-bar
 
@@ -213,7 +257,7 @@ function MyTabLine()
     endif
 
     " the label is made by MyTabLabel()
-    let s .= '  %{MyTabLabel(' . (i + 1) . ')}' . wct . ' ▕'
+    let s .= ' %{MyTabLabel(' . (i + 1) . ')}' . wct . ' '
   endfor
 
   " after the last tab fill with TabLineFill and reset tab page nr
@@ -228,47 +272,6 @@ function MyTabLine()
 endfunction
 
 set tabline=%!MyTabLine()
-
-" ------------- Plugins ------------------
-
-call plug#begin()
-" Essential things
-Plug 'williamboman/mason.nvim' " for easy treesitter language installs
-Plug 'nvim-lua/plenary.nvim' " misc handy Lua functions
-Plug 'nvim-treesitter/nvim-treesitter', { 'do': ':TSUpdate' } " better syntax parsing/highlighting
-Plug 'neovim/nvim-lspconfig' " sensible default configs for LSP
-Plug 'L3MON4D3/LuaSnip'       " ?
-Plug 'hrsh7th/nvim-cmp'         " Autocompletion plugin
-Plug 'hrsh7th/cmp-nvim-lsp'     " LSP source for nvim-cmp
-Plug 'hrsh7th/cmp-buffer'       " buffer source for nvim-cmp
-Plug 'saadparwaiz1/cmp_luasnip'
-Plug 'nvim-telescope/telescope.nvim', { 'tag': '0.1.4' } " file/buffer picker
-Plug 'nvim-telescope/telescope-fzf-native.nvim', { 'do': 'make' }
-Plug 'nvim-telescope/telescope-ui-select.nvim'
-Plug 'nvim-tree/nvim-tree.lua'
-
-" Useful features
-Plug 'tpope/vim-commentary', { 'branch': 'master' } " commenting plugin
-Plug 'tpope/vim-sleuth', { 'branch': 'master' }     " set shiftwidth etc automatically from buffer content
-Plug 'windwp/nvim-autopairs'                        " auto-pair (), {} etc
-Plug 'iamcco/markdown-preview.nvim', { 'do': { -> mkdp#util#install() }, 'for': ['markdown', 'vim-plug']}
-
-Plug 'rodjek/vim-puppet/' " Puppet syntax highlighting
-
-Plug 'natecraddock/workspaces.nvim'
-Plug 'natecraddock/sessions.nvim'
-
-" Visual things
-Plug 'nvim-tree/nvim-web-devicons'
-Plug 'https://git.sr.ht/~whynothugo/lsp_lines.nvim' " lines pointing at LSP stuff
-
-" GoNeovim has these built in but the plugin versions are better/more customisable
-"Plug 'dstein64/nvim-scrollview', { 'branch': 'main' }  " scrollbar
-Plug 'lukas-reineke/indent-blankline.nvim' " indent guides
-
-" Colour scheme
-Plug 'rose-pine/neovim', { 'as': 'rose-pine' }
-call plug#end()
 
 
 lua << EOL
@@ -311,13 +314,25 @@ end
 
 local caps = require("cmp_nvim_lsp").default_capabilities()
 local lspconfig = require("lspconfig")
-local standard_servers = { 'gopls', 'tsserver', 'solargraph', 'pylsp' }
+local standard_servers = { 'gopls', 'solargraph', 'pylsp', 'vtsls' }
 for _, lsp in ipairs(standard_servers) do
     lspconfig[lsp].setup {
         capabilities = caps,
         on_attach = on_attach,
     }
 end
+
+-- lspconfig.tsserver.setup {
+--     on_attach = on_attach,
+--     capabilities = caps,
+--     settings = {
+--         javascript = {
+--             format = {
+--                 semicolons = "insert",
+--             },
+--         },
+--     },
+-- }
 
 lspconfig.rust_analyzer.setup {
     on_attach = on_attach,
@@ -354,26 +369,26 @@ cmp.setup {
         ['<C-Space>'] = cmp.mapping.complete(),
         ['<CR>'] = cmp.mapping.confirm {
             behavior = cmp.ConfirmBehavior.Replace,
-            select = true,
+            select = false,
         },
-        ['<Tab>'] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-                cmp.select_next_item()
-            elseif luasnip.expand_or_jumpable() then
-                luasnip.expand_or_jump()
-            else
-                fallback()
-            end
-        end, { 'i', 's' }),
-        ['<S-Tab>'] = cmp.mapping(function(fallback)
-            if cmp.visible() then
-                cmp.select_prev_item()
-            elseif luasnip.jumpable(-1) then
-                luasnip.jump(-1)
-            else
-                fallback()
-            end
-        end, { 'i', 's' }),
+--        ['<Tab>'] = cmp.mapping(function(fallback)
+--                if cmp.visible() then
+--                    cmp.select_next_item()
+--                elseif luasnip.expand_or_jumpable() then
+--                    luasnip.expand_or_jump()
+--                else
+--                    fallback()
+--                end
+--            end, { 'i', 's' }),
+--        ['<S-Tab>'] = cmp.mapping(function(fallback)
+--                if cmp.visible() then
+--                    cmp.select_prev_item()
+--                elseif luasnip.jumpable(-1) then
+--                    luasnip.jump(-1)
+--                else
+--                    fallback()
+--                end
+--            end, { 'i', 's' }),
     }),
     sources = cmp.config.sources({
         { name = 'nvim_lsp' },
@@ -397,6 +412,15 @@ require("workspaces").setup({
         open = function()
             require("sessions").load(nil, { silent = true })
         end,
+    }
+})
+
+require("fidget").setup({
+    notification = {
+        window = {
+            winblend = 20,
+            border = 'rounded',
+        }
     }
 })
 
@@ -424,8 +448,11 @@ vim.keymap.set('n', '<space>b', tsc_builtin.buffers, {})
 vim.keymap.set('n', '<space>g', tsc_builtin.live_grep, {})
 vim.keymap.set('n', '<space>d', tsc_builtin.diagnostics, {})
 vim.keymap.set('n', '<space>w', '<Cmd>Telescope workspaces<CR>', {silent=true})
+vim.keymap.set("n", "<space>t", ":Telescope file_browser<CR>")
+
 telescope.load_extension('ui-select')
 telescope.load_extension('workspaces')
+telescope.load_extension "file_browser"
 
 local nap = require("nvim-autopairs")
 local remap = vim.api.nvim_set_keymap
@@ -527,7 +554,7 @@ require('rose-pine').setup({
         FloatBorder =         {                   fg = "text" },
         TelescopeBorder =     {                   fg = "text" },
         VertSplit =           {                   fg = "muted" },
-        TabLineFill =         { bg = "muted" },
+        TabLineFill =         { bg = "base" },
         TabLine =             { bg = "muted",     fg = "base" },
         TabLineWC =           { bg = "muted",     fg = "highlight_high" },
         TabLineSel =          { bg = "text",      fg = "base" },
